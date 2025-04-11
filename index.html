@@ -35,6 +35,15 @@
             border-radius: 8px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
+        canvas, video {
+            position: relative;
+        }
+        #switch-camera {
+            margin-top: 10px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -44,6 +53,7 @@
         <h3>Objetos Detectados:</h3>
         <ul id="object-list"></ul>
     </div>
+    <button id="switch-camera">Usar cámara trasera</button>
 
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd"></script>
@@ -53,10 +63,22 @@
         const context = canvas.getContext('2d');
         const objectList = document.getElementById('object-list');
         const detectedObjects = new Map();
+        const switchCameraButton = document.getElementById('switch-camera');
+        let useRearCamera = false;
+
+        switchCameraButton.addEventListener('click', async () => {
+            useRearCamera = !useRearCamera;
+            await setupCamera();
+        });
 
         async function setupCamera() {
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                const constraints = {
+                    video: {
+                        facingMode: useRearCamera ? 'environment' : 'user'
+                    }
+                };
+                const stream = await navigator.mediaDevices.getUserMedia(constraints);
                 video.srcObject = stream;
                 return new Promise((resolve) => {
                     video.onloadedmetadata = () => {
@@ -93,9 +115,9 @@
             predictions.forEach(prediction => {
                 context.beginPath();
                 context.rect(...prediction.bbox);
-                context.lineWidth = 2;
+                context.lineWidth = 1.5;
                 context.strokeStyle = 'red';
-                context.fillStyle = 'red';
+                context.fillStyle = 'black';
                 context.stroke();
                 context.fillText(
                     `${prediction.class} (${Math.round(prediction.score * 100)}%)`,
